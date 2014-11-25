@@ -8,125 +8,170 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Scanner;
 
+/**
+ * NTBClassifier represents a naïve bayesian text classifier.
+ * 
+ * @author R
+ * 
+ */
 public class NBTClassifier {
-	public enum GenderClass {
+	/**
+	 * Defines the male/female genders.
+	 */
+	public enum Gender {
 		MALE, FEMALE;
 	}
 
-	private int k = 1;
+	private int k = 1;// the constant used in calculating probability(see
+						// blackboard pdf)
 
-	public NBTClassifier(int k) {
-		this.k = k;
-	}
-
+	// male/female dictionaries.
 	public Dictionary maleDict = new Dictionary();
 	public Dictionary femaleDict = new Dictionary();
 
+	/**
+	 * Returns the total word count(of both the female and male dictionary)
+	 */
 	public int getDictSize() {
 		return maleDict.getWordCount() + femaleDict.getWordCount();
 	}
 
-	public void putWords(GenderClass gender, List<String> words) {
-		if (gender == GenderClass.FEMALE) {
-			femaleDict.pushWords(words);
+	/**
+	 * Trains the classifier by giving it a list of words with the associated
+	 * gender.
+	 */
+	public void putWords(Gender gender, List<String> words) {
+		if (gender == Gender.FEMALE) {// determine if the words are typed by a
+										// female or a male.
+			femaleDict.putWords(words);// put it in the correct dictionary.
 		} else {
-			maleDict.pushWords(words);
+			maleDict.putWords(words);
 		}
 	}
 
-	public GenderClass classify(List<String> words) {
+	/**
+	 * Classifies a list of words.
+	 */
+	public Gender classify(List<String> words) {
+		// calcutate the probability for both male and female.
 		double maleProb = maleDict.log2ProbSentence(words);
 		double femaleProb = femaleDict.log2ProbSentence(words);
-		if (maleProb > femaleProb) {
-			return GenderClass.MALE;
+		if (maleProb > femaleProb) {// determine which gender gives the greater
+									// probability.
+			return Gender.MALE;// return the correct gender.
 		} else {
-			return GenderClass.FEMALE;
+			return Gender.FEMALE;
 		}
 	}
 
+	/**
+	 * Represents a dictionary that keeps track of how many times certain words
+	 * are used.
+	 * 
+	 * @author R
+	 * 
+	 */
 	class Dictionary {
 
-		private Map<String, Integer> dict = new HashMap<String, Integer>();
-		private int wordCount = 0;
+		/**
+		 * The map(http://en.wikipedia.org/wiki/Associative_array) containing
+		 * the amount of occurences for eath word using the words as key and the
+		 * amount of occurences as value.
+		 */
+		private Map<String, Integer> dict = new HashMap<String, Integer>();//initially empty.
+		private int wordCount = 0;//keep track of the total amount of words.
 
+		/**
+		 * returns the word count.
+		 */
 		public int getWordCount() {
 			return wordCount;
 		}
-
-		public void pushWords(List<String> words) {
-			for (String word : words) {
-				if (dict.containsKey(word)) {
-					dict.put(word, dict.get(word) + 1);
+		/**
+		 * Puts a list of words in this dictionary.
+		 */
+		public void putWords(List<String> words) {
+			for (String word : words) {//loop through all words.
+				if (dict.containsKey(word)) {//check if the dictionary contains the word(as a key).
+					dict.put(word, dict.get(word) + 1);//then increment the occurence amount for that word with 1.
 				} else {
-					dict.put(word, 1);
+					dict.put(word, 1);//otherwise add a new (key,value) pair to the map initially with a value equal to 1.
 				}
 			}
-			wordCount += words.size();
+			wordCount += words.size();//update the total amount of words.
 		}
 
+		/**
+		 * Returns probability for 1 word in log space(base 2)
+		 */
 		public double log2ProbWord(String word) {
-			int count = dict.containsKey(word) ? dict.get(word) : 0;
-			double prob = (double) (count + k) / (wordCount + getDictSize() * k);
-			return Math.log(prob) / Math.log(2);
+			int count = dict.containsKey(word) ? dict.get(word) : 0;//occurence amount of this word.
+			double prob = (double) (count + k)
+					/ (wordCount + getDictSize() * k);//calculate probability using formula as provided in 
+			return Math.log(prob) / Math.log(2);//returns the value in log space(base 2)
 		}
-
+		/**
+		 * Returns probability for a list of words in log space(base 2)
+		 */
 		public double log2ProbSentence(List<String> words) {
-			double prob = 0;
-			for (String word : words) {
-				prob += log2ProbWord(word);
+			double prob = 0;//we are using log space->we start with 0.
+			for (String word : words) {//loop through all words.
+				prob += log2ProbWord(word);//add the probability for the word to the total probability.
 			}
-			return prob;
+			return prob;//return the result.
 		}
 	}
 
 	// TEST
 	public static void test1() {
-		NBTClassifier classifier = new NBTClassifier(1);
-		String maleWords = "YO MAN I WANNA EAT A HOTDOG";
-		String femaleWords = "I'M GOING TO SHOP THE WHOLE DAY!";
-		classifier.putWords(GenderClass.MALE, Tokenizer.tokenize(maleWords));
-		classifier
-				.putWords(GenderClass.FEMALE, Tokenizer.tokenize(femaleWords));
-		String testWords = "SHALL WE BUY A HOTDOG?";
-		System.out.println(classifier.classify(Tokenizer.tokenize(testWords)));
+		NBTClassifier classifier = new NBTClassifier();//initialize the classifier
+		String maleWords = "YO MAN I WANNA EAT A HOTDOG";//a sentence used often by a male.
+		String femaleWords = "I'M GOING TO SHOP THE WHOLE DAY!";//a sentence used often by a female
+		classifier.putWords(Gender.MALE, Tokenizer.tokenize(maleWords));//train the classifier
+		classifier.putWords(Gender.FEMALE, Tokenizer.tokenize(femaleWords));//train the classifier.
+		String testWords = "SHALL WE BUY A HOTDOG?";//test sentence
+		System.out.println(classifier.classify(Tokenizer.tokenize(testWords)));//output the predicted gender(should be MALE).
 	}
 
 	public static void test2() {
 		try {
-			NBTClassifier classifier = new NBTClassifier(1);
-			File[] maleFiles = new File("blogstrain/M").listFiles();
-			for (File file : maleFiles) {
-				classifier.putWords(GenderClass.MALE,
-						FileTokenizer.fileTokenize(file));
+			NBTClassifier classifier = new NBTClassifier();//initialize the classifier.
+			//TRAINING
+			File[] maleFiles = new File("blogstrain/M").listFiles();//list all male training files
+			for (File file : maleFiles) {//loop through the files
+				classifier.putWords(Gender.MALE,
+						FileTokenizer.fileTokenize(file));//train the classifier using the content of the file.
 			}
-			File[] femaleFiles = new File("blogstrain/F").listFiles();
-			for (File file : femaleFiles) {
-				classifier.putWords(GenderClass.FEMALE,
-						FileTokenizer.fileTokenize(file));
+			File[] femaleFiles = new File("blogstrain/F").listFiles();//list all female training files
+			for (File file : femaleFiles) {//loop through the files
+				classifier.putWords(Gender.FEMALE,
+						FileTokenizer.fileTokenize(file));//train the classifier using the content of the file.
 			}
-			maleFiles = new File("blogstest/M").listFiles();
-			for (File file : maleFiles) {
-				GenderClass result = classifier.classify(FileTokenizer.fileTokenize(file));
-				if(result.equals(GenderClass.FEMALE)) {
-					System.out.println("fail:" + file.getName());
+			//PREDICTING/CLASSIFY
+			maleFiles = new File("blogstest/M").listFiles();//list all male test files
+			for (File file : maleFiles) {//loop through the files
+				Gender result = classifier.classify(FileTokenizer
+						.fileTokenize(file));//predict the gender of the file text.
+				if (result.equals(Gender.FEMALE)) {//check if the prediction is wrong
+					System.out.println("fail:" + file.getName());//then output a fail.
 				}
 			}
-			femaleFiles = new File("blogstest/F").listFiles();
-			
-			for (File file : femaleFiles) {
-				GenderClass result = classifier.classify(FileTokenizer.fileTokenize(file));
-				if(result.equals(GenderClass.MALE)) {
-					System.out.println("fail:" + file.getName());
+			femaleFiles = new File("blogstest/F").listFiles();//list all female test files
+
+			for (File file : femaleFiles) {//loop through the files
+				Gender result = classifier.classify(FileTokenizer
+						.fileTokenize(file));//predict the gender of the file text.
+				if (result.equals(Gender.MALE)) {//check if the prediction is wrong
+					System.out.println("fail:" + file.getName());//then output a fail.
 				}
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
+		} catch (IOException e) {//we are reading files->input/output exception may occur
+			e.printStackTrace();//print the exception to the console.
 		}
 	}
 
 	public static void main(String[] args) {
-		test2();
+		test2();//use either test1() or test2() to run a test.
 	}
 }

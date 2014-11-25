@@ -10,19 +10,20 @@ public class FileTokenizer {
 		String text = readFile(file);
 		return Tokenizer.tokenize(text);
 	}
+	/**
+	 * Reads the contents of a file and returns the contents in a string.
+	 */
 	private static String readFile(File file) throws IOException {
 
-	    StringBuilder fileContents = new StringBuilder((int)file.length());
-	    Scanner scanner = new Scanner(file);
-	    String lineSeparator = System.getProperty("line.separator");
-
+	    StringBuilder fileContents = new StringBuilder((int)file.length());//initialize a stringbuilder using the files length as initial capacity.
+	    Scanner scanner = new Scanner(file);//initialize a Scanner to read from the file.
 	    try {
-	        while(scanner.hasNextLine()) {        
-	            fileContents.append(scanner.nextLine() + lineSeparator);
+	        while(scanner.hasNextLine()) {//loop through all the lines in the file.  
+	            fileContents.append(scanner.nextLine() + " ");//appends the stringbuilder with the next line, using a space character to seperate lines.
 	        }
-	        return fileContents.toString();
+	        return fileContents.toString();//returns the result of the stringbuilder.
 	    } finally {
-	        scanner.close();
+	        scanner.close();//ALWAYS CLOSE A FILEREADER!!!
 	    }
 	}
 }
